@@ -2,7 +2,6 @@ package oleg
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
