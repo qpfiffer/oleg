@@ -36,6 +36,8 @@ func main() {
 
 	if flag.NArg() == 3 {
 		value = flag.Arg(2)
+	} else if flag.NArg() == 0 {
+		flag.Usage()
 	}
 
 	if value != "" {
@@ -46,12 +48,14 @@ func main() {
 		} else {
 			var val string
 			val, err = DB.Unjar(table, key)
-			fmt.Println(val)
+			if err == nil {
+				fmt.Println(val)
+			}
 		}
 	}
 
 	if err != nil {
-		fmt.Errorf("error: %s", err.Error())
+		fmt.Fprintf(os.Stderr, "error: %s\n", err.Error())
 		os.Exit(1)
 	}
 }
