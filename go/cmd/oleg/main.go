@@ -15,6 +15,7 @@ var (
 	DB           *oleg.Database
 	HostFlag     = flag.String("host", "127.0.0.1", "hostname olegdb is running on")
 	PortFlag     = flag.String("port", "38080", "port olegdb is listening on")
+	ValueFlag    = flag.String("value", "", "value to put into olegdb")
 	DeleteAction = flag.Bool("delete", false, "delete this key from olegdb?")
 )
 
@@ -33,11 +34,17 @@ func main() {
 
 	table = flag.Arg(0)
 	key = flag.Arg(1)
+	value = *ValueFlag
 
-	if flag.NArg() == 3 {
-		value = flag.Arg(2)
-	} else if flag.NArg() == 0 {
+	if *DeleteAction && value != "" {
+		fmt.Fprintf(os.Stderr, "Invalid action combination\n")
 		flag.Usage()
+		os.Exit(1)
+	}
+
+	if flag.NArg() > 3 || flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	if value != "" {
