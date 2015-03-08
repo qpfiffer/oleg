@@ -72,10 +72,12 @@ func (d *Database) Jar(table, key, value string) error {
 // Unjar gets key from table out of OlegDB, returning an error if the operation failed.
 func (d *Database) Unjar(table, key string) (value string, err error) {
 	res, err := d.request(table, key, "", "GET", time.Unix(0, 0))
-	if res.StatusCode != 200 {
+
+	defer res.Body.Close()
+	switch res.StatusCode {
+	case http.StatusNotFound:
 		return "", ErrNoSuchKey
 	}
-	defer res.Body.Close()
 
 	body, _ := ioutil.ReadAll(res.Body)
 
