@@ -1,5 +1,6 @@
 // vim: noet ts=4 sw=4
 #pragma once
+#include <time.h>
 
 /* String sizes for db_conn objects. */
 #define DB_HOST_SIZ 256

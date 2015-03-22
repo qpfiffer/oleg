@@ -18,7 +18,7 @@ clean:
 
 lib: $(NAME)
 $(NAME): oleg-http.o http.o
-	$(CC) $(CLAGS) $(INCLUDES) -o $(NAME) -shared $^ $(LIBS)
+	$(CC) $(CLAGS) $(INCLUDES) -o $(NAME) -shared $^ -lm
 
 install: lib
 	@mkdir -p $(INSTALL_LIB)
@@ -26,6 +26,6 @@ install: lib
 	@install $(NAME) $(INSTALL_LIB)$(NAME).$(VERSION)
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME)
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME).0
-	@install ./include/oleg-http.h $(INSTALL_INCLUDE)
+	@cp ./include/oleg-http.h $(INSTALL_INCLUDE)
 	@ldconfig $(INSTALL_LIB)
 	@echo "$(NAME) installed to $(PREFIX) :^)."
