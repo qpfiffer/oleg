@@ -9,6 +9,8 @@
 
 #define MAX_KEY_SIZE 250
 
+#define BUNJAR_SIZE_SIZ 8
+
 /* Holds connection stuff. */
 typedef struct db_conn {
 	char host[DB_HOST_SIZ];
@@ -40,6 +42,11 @@ typedef struct db_match {
 	const void *extradata;
 	struct db_match *next;
 } db_match;
+
+/* Takes a list of key matches and returns a list of matched values.
+ * Set 'free_keys' to 0 if you want to free the list of keys yourself.
+ */
+db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, const int free_keys);
 
 /* Takes prefix and a predicate, and produces a list of db_match objects.
  * extrainput can be used to pass in anything extra you might want to pass in. Like something to compare to.

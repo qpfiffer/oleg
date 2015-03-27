@@ -1,4 +1,6 @@
 // vim: noet ts=4 sw=4
+#include <errno.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +41,13 @@ static const char DB_ALL[] =  "GET /%s/_all HTTP/1.1\r\n"
 	"Host: %s:%s\r\n"
 	"Accept-Encoding: identity\r\n"
 	"\r\n";
+
+static const char DB_BULK_UNJAR[] =  "POST /%s/_bulk_unjar HTTP/1.1\r\n"
+	"Host: %s:%s\r\n"
+	"Content-Length: %zu\r\n"
+	"Accept-Encoding: identity\r\n"
+	"\r\n";
+
 
 static int _fetch_matches_common(const db_conn *conn, const char prefix[static MAX_KEY_SIZE]) {
 	const size_t db_match_siz = strlen(conn->db_name) + strlen(conn->host) +
@@ -385,4 +394,147 @@ time_t fetch_uptime_from_db(const db_conn *conn) {
 error:
 	close(sock);
 	return 0;
+}
+
+static inline size_t _nline_delimited_key_size(const struct db_key_match *keys) {
+	size_t siz = 0;
+
+	const db_key_match *current = keys;
+	while (current) {
+		siz += strlen(current->key);
+		current = current->next;
+		if (current)
+			siz += strlen("\n");
+	}
+
+	return siz;
+}
+
+static inline db_match *_parse_bulk_response(const unsigned char *data, const size_t dsize) {
+	db_match *last = NULL;
+	db_match *matches = NULL;
+
+	unsigned int i = 0;
+
+	while (i < dsize) {
+		char siz_buf[BUNJAR_SIZE_SIZ + 1] = {0};
+		unsigned char *data_buf = NULL;
+
+		/* Read in size first */
+		unsigned int j;
+		for (j = 0; j < BUNJAR_SIZE_SIZ; j++)
+			siz_buf[j] = data[j + i];
+
+		i += j;
+
+		const long long record_size = strtol(siz_buf, NULL, 10);
+		if ((record_size == LONG_MIN || record_size == LONG_MAX) && errno == ERANGE) {
+			goto error;
+		}
+
+		data_buf = malloc(record_size + 1);
+		if (!data_buf) {
+			goto error;
+		}
+		data_buf[record_size] = '\0';
+
+		if (record_size == 0)
+			continue;
+
+		for (j = 0; j < record_size; j++) {
+			data_buf[j] = data[i + j];
+		}
+
+		db_match *actual = malloc(sizeof(db_match));
+		if (!actual) {
+			goto error;
+		}
+
+		db_match _tmp = {
+			.data = data_buf,
+			.dsize = record_size,
+			.extradata = NULL,
+			.next = NULL
+		};
+		memcpy(actual, &_tmp, sizeof(db_match));
+
+		/* This is dumb but I'm on the train right now and I don't care. */
+		if (last)
+			last->next = actual;
+		if (!matches)
+			matches = actual;
+		last = actual;
+		i += j;
+	}
+
+	return matches;
+
+error:
+	while (matches) {
+		db_match *next = matches->next;
+		free((unsigned char *)matches->data);
+		free(matches);
+		matches = next;
+	}
+
+	return NULL;
+}
+
+db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int free_keys) {
+	size_t dsize = 0;
+	unsigned char *_data = NULL;
+	int sock = 0;
+
+	const size_t keys_size = _nline_delimited_key_size(keys);
+	const size_t db_bu_siz = strlen(conn->db_name) + strlen(conn->host) +
+							 strlen(conn->port) + strlen(DB_BULK_UNJAR);
+	const size_t total_size = keys_size + db_bu_siz;
+	char *new_db_request = malloc(total_size + 1);;
+	new_db_request[total_size] = '\0';
+
+	sock = 0;
+	sock = connect_to_host_with_port(conn->host, conn->port);
+	if (sock == 0) {
+		goto error;
+	}
+
+	/* TODO: Is it faster here to A) Loop through the keys twice, allocating a single
+	 * buffer once the size is known or B) looping through the keys once, allocating a
+	 * buffer on the stack and resizing it as we go?
+	 */
+	snprintf(new_db_request, db_bu_siz, DB_BULK_UNJAR, conn->db_name, conn->host, conn->port, keys_size);
+	db_key_match *current = keys;
+
+	while (current) {
+		strncat(new_db_request, current->key, total_size);
+
+		current = current->next;
+		if (current)
+			strncat(new_db_request, "\n", total_size);
+
+		if (free_keys)
+			free(current);
+	}
+
+	unsigned int rc = send(sock, new_db_request, total_size, 0);
+	if (total_size != rc) {
+		goto error;
+	}
+
+
+	/* Now we get back our weird Oleg-only format of keys. Hopefully
+	 * not chunked.
+	 */
+	_data = receive_http(sock, &dsize);
+	if (!_data) {
+		goto error;
+	}
+
+	return _parse_bulk_response(_data, dsize);
+
+error:
+	if (sock)
+		close(sock);
+	free(_data);
+	return NULL;
 }
