@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
 
 		printf("%s\n", current->data);
 
+		free((char *)current->data);
 		free(current);
 		current = next;
 	}

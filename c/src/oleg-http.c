@@ -410,7 +410,7 @@ static inline size_t _nline_delimited_key_size(const struct db_key_match *keys) 
 	return siz;
 }
 
-static inline db_match *_parse_bulk_response(const unsigned char *data, const size_t dsize) {
+static inline db_match *_parse_bulk_response(unsigned char *data, const size_t dsize) {
 	db_match *last = NULL;
 	db_match *matches = NULL;
 
@@ -432,14 +432,14 @@ static inline db_match *_parse_bulk_response(const unsigned char *data, const si
 			goto error;
 		}
 
+		if (record_size == 0)
+			continue;
+
 		data_buf = malloc(record_size + 1);
 		if (!data_buf) {
 			goto error;
 		}
 		data_buf[record_size] = '\0';
-
-		if (record_size == 0)
-			continue;
 
 		for (j = 0; j < record_size; j++) {
 			data_buf[j] = data[i + j];
@@ -467,6 +467,7 @@ static inline db_match *_parse_bulk_response(const unsigned char *data, const si
 		i += j;
 	}
 
+	free(data);
 	return matches;
 
 error:
@@ -476,6 +477,7 @@ error:
 		free(matches);
 		matches = next;
 	}
+	free(data);
 
 	return NULL;
 }
@@ -489,8 +491,7 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 	const size_t db_bu_siz = strlen(conn->db_name) + strlen(conn->host) +
 							 strlen(conn->port) + strlen(DB_BULK_UNJAR);
 	const size_t total_size = keys_size + db_bu_siz;
-	char *new_db_request = malloc(total_size + 1);;
-	new_db_request[total_size] = '\0';
+	char *new_db_request = calloc(1, total_size);
 
 	sock = 0;
 	sock = connect_to_host_with_port(conn->host, conn->port);
@@ -522,6 +523,7 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 	if (total_size != rc) {
 		goto error;
 	}
+	free(new_db_request);
 
 
 	/* Now we get back our weird Oleg-only format of keys. Hopefully
@@ -538,5 +540,6 @@ error:
 	if (sock)
 		close(sock);
 	free(_data);
+	free(new_db_request);
 	return NULL;
 }
