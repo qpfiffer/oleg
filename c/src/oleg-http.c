@@ -508,12 +508,14 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 	while (current) {
 		strncat(new_db_request, current->key, total_size);
 
-		current = current->next;
-		if (current)
+		struct db_key_match *next = current->next;
+		if (next)
 			strncat(new_db_request, "\n", total_size);
 
 		if (free_keys)
 			free(current);
+
+		current = next;
 	}
 
 	unsigned int rc = send(sock, new_db_request, total_size, 0);
