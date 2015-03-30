@@ -27,5 +27,6 @@ install: lib
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME)
 	@ln -fs $(INSTALL_LIB)$(NAME).$(VERSION) $(INSTALL_LIB)$(NAME).0
 	@cp ./include/oleg-http.h $(INSTALL_INCLUDE)
+	@cp ./include/http.h $(INSTALL_INCLUDE)
 	@ldconfig $(INSTALL_LIB)
 	@echo "$(NAME) installed to $(PREFIX) :^)."
