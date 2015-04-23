@@ -46,12 +46,16 @@ int connect_to_host_with_port(const char *host, const char *port) {
 		.ai_next      = 0
 	};
 	struct addrinfo *res = NULL;
-	int request_fd;
+	int request_fd = 0;
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-	getaddrinfo(host, port, &hints, &res);
+	int err = 0;
+	if ((err = getaddrinfo(host, port, &hints, &res)) != 0) {
+		printf("Could not get address information: %s", gai_strerror(err));
+		goto error;
+	}
 
 	request_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (request_fd < 0) {
