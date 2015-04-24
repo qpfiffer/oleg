@@ -205,8 +205,11 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 		ioctl(request_fd, FIONREAD, &count);
 		if (count <= 0 && result_size == payload_received)
 			break;
-		else if (count <= 0) /* Continue waiting. */
+		else if (count <= 0) { /* Continue waiting. */
+			if (times_read > 10000)
+				goto error;
 			continue;
+		}
 		int old_offset = buf_size;
 		buf_size += count;
 		if (raw_buf != NULL) {
