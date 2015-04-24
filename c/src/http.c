@@ -162,8 +162,9 @@ char *receieve_only_http_header(const int request_fd, const int timeout, size_t 
 		goto error;
 
 	const size_t header_size = header_end - raw_buf;
-	char *to_return = malloc(header_size);
+	char *to_return = malloc(header_size + 1);
 	memcpy(to_return, raw_buf, header_size);
+	to_return[header_size] = '\0';
 	*out = header_size;
 	free(raw_buf);
 
