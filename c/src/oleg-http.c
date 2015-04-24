@@ -526,7 +526,6 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 	if (total_size != rc) {
 		goto error;
 	}
-	free(new_db_request);
 
 
 	/* Now we get back our weird Oleg-only format of keys. Hopefully
@@ -537,6 +536,7 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 		goto error;
 	}
 
+	free(new_db_request);
 	return _parse_bulk_response(_data, dsize);
 
 error:
