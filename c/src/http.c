@@ -128,7 +128,12 @@ char *receieve_only_http_header(const int request_fd, const int timeout, size_t 
 
 		int count;
 		/* How many bytes should we read: */
-		ioctl(request_fd, FIONREAD, &count);
+		int rc = ioctl(request_fd, FIONREAD, &count);
+		if (rc == -1) {
+			perror("receieve_only_http_header");
+			goto error;
+		}
+
 		if (count <= 0)
 			break;
 		else if (count <= 0) /* Continue waiting. */
@@ -203,14 +208,16 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 
 		int count;
 		/* How many bytes should we read: */
-		ioctl(request_fd, FIONREAD, &count);
+		int rc = ioctl(request_fd, FIONREAD, &count);
+		if (rc == -1) {
+			perror("receive_http_with_timeout");
+			goto error;
+		}
+
 		if (count <= 0 && result_size == payload_received)
 			break;
-		else if (count <= 0) { /* Continue waiting. */
-			if (times_read > 10000)
-				goto error;
+		else if (count <= 0) /* Continue waiting. */
 			continue;
-		}
 		int old_offset = buf_size;
 		buf_size += count;
 		if (raw_buf != NULL) {
