@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "http.h"
 
@@ -203,6 +204,15 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 	size_t result_size = 0;
 	size_t payload_received = 0;
 	size_t total_received = 0;
+
+	/* 30 second timeout failure. */
+	struct tm utctime = {0};
+	time_t start;
+
+	time(&start);
+	gmtime_r(&start, &utctime);
+	start = timegm(&utctime);
+
 	while (1) {
 		times_read++;
 
@@ -214,7 +224,14 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 			goto error;
 		}
 
-		if (count <= 0 && result_size == payload_received)
+		struct tm _utctime = {0};
+		time_t now;
+
+		time(&now);
+		gmtime_r(&now, &_utctime);
+		now = timegm(&_utctime);
+
+		if ((count <= 0 && result_size == payload_received) || now > (start + 30))
 			break;
 		else if (count <= 0) /* Continue waiting. */
 			continue;
