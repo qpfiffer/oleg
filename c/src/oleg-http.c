@@ -424,8 +424,8 @@ static inline db_match *_parse_bulk_response(unsigned char *data, const size_t d
 		unsigned char *data_buf = NULL;
 
 		/* Read in size first */
-		unsigned int j;
-		for (j = 0; j < BUNJAR_SIZE_SIZ; j++)
+		unsigned int j = 0;
+		for (; j < BUNJAR_SIZE_SIZ; j++)
 			siz_buf[j] = data[j + i];
 
 		i += j;
@@ -435,20 +435,21 @@ static inline db_match *_parse_bulk_response(unsigned char *data, const size_t d
 			goto error;
 		}
 
-		if (record_size == 0)
-			continue;
+		db_match *actual = NULL;
+		if (record_size == 0) {
+			actual = calloc(1, sizeof(struct db_match));
+			j = 0;
+			goto done;
+		}
 
 		data_buf = malloc(record_size + 1);
-		if (!data_buf) {
-			goto error;
-		}
-		data_buf[record_size] = '\0';
+		if (data_buf)
+			data_buf[record_size] = '\0';
 
-		for (j = 0; j < record_size; j++) {
+		for (j = 0; j < record_size; j++)
 			data_buf[j] = data[i + j];
-		}
 
-		db_match *actual = malloc(sizeof(db_match));
+		actual = malloc(sizeof(db_match));
 		if (!actual) {
 			goto error;
 		}
@@ -462,6 +463,7 @@ static inline db_match *_parse_bulk_response(unsigned char *data, const size_t d
 		memcpy(actual, &_tmp, sizeof(db_match));
 
 		/* This is dumb but I'm on the train right now and I don't care. */
+done:
 		if (last)
 			last->next = actual;
 		if (!matches)
