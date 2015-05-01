@@ -206,12 +206,8 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 	size_t total_received = 0;
 
 	/* 30 second timeout failure. */
-	struct tm utctime = {0};
-	time_t start;
-
+	time_t start = 0;
 	time(&start);
-	gmtime_r(&start, &utctime);
-	start = timegm(&utctime);
 
 	while (1) {
 		times_read++;
@@ -224,14 +220,12 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 			goto error;
 		}
 
-		struct tm _utctime = {0};
-		time_t now;
-
+		time_t now = 0;
 		time(&now);
-		gmtime_r(&now, &_utctime);
-		now = timegm(&_utctime);
 
-		if ((count <= 0 && result_size == payload_received) || now > (start + 30))
+		if (count <= 0 && result_size == payload_received)
+			break;
+		else if (now > (start + 3000))
 			break;
 		else if (count <= 0) /* Continue waiting. */
 			continue;
