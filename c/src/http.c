@@ -229,6 +229,9 @@ unsigned char *receive_http_with_timeout(const int request_fd, const int timeout
 			break;
 		else if (count <= 0) /* Continue waiting. */
 			continue;
+		/* Reset the timeout counter because we received some bytes. */
+		time(&start);
+
 		int old_offset = buf_size;
 		buf_size += count;
 		if (raw_buf != NULL) {
