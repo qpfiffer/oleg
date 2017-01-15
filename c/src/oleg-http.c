@@ -18,6 +18,10 @@ static const char DB_REQUEST[] = "GET /%s/%s HTTP/1.1\r\n"
 	"Host: %s:%s\r\n"
 	"\r\n";
 
+static const char DB_DELETE[] = "DELETE /%s/%s HTTP/1.1\r\n"
+	"Host: %s:%s\r\n"
+	"\r\n";
+
 static const char DB_POST[] = "POST /%s/%s HTTP/1.1\r\n"
 	"Host: %s:%s\r\n"
 	"Content-Length: %zu\r\n"
@@ -547,4 +551,28 @@ error:
 	free(_data);
 	free(new_db_request);
 	return NULL;
+}
+
+int delete_record_from_db(const db_conn *conn, const char key[static MAX_KEY_SIZE]) {
+	const size_t db_request_siz = strlen(conn->db_name) + strnlen(key, MAX_KEY_SIZE) + strlen(conn->host) +
+								  strlen(conn->port) + strlen(DB_DELETE);
+	char new_db_request[db_request_siz];
+	memset(new_db_request, '\0', db_request_siz);
+
+	int sock = 0;
+	sock = connect_to_host_with_port(conn->host, conn->port);
+	if (sock == 0)
+		goto error;
+
+	snprintf(new_db_request, db_request_siz, DB_DELETE, conn->db_name, key, conn->host, conn->port);
+	unsigned int rc = send(sock, new_db_request, strlen(new_db_request), 0);
+	if (strlen(new_db_request) != rc)
+		goto error;
+
+	close(sock);
+	return 1;
+
+error:
+	close(sock);
+	return 0;
 }

@@ -21,6 +21,7 @@ typedef struct db_conn {
 /* Set and get functions. */
 unsigned char *fetch_data_from_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], size_t *outdata);
 int store_data_in_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], const unsigned char *val, const size_t vlen);
+int delete_record_from_db(const db_conn *conn, const char key[static MAX_KEY_SIZE]);
 
 typedef struct db_key_match {
 	const char key[MAX_KEY_SIZE];
