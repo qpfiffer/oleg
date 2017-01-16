@@ -51,7 +51,7 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, con
 
 /* Takes prefix and a predicate, and produces a list of db_match objects.
  * extrainput can be used to pass in anything extra you might want to pass in. Like something to compare to.
- * Extradata will be taken and stored in the db_match object. This is good if you're doing some working
- * you want to be able to access later, like deserializing and object. */
+ * *extrainput will be taken and stored in the db_match object. This is good if you're doing some working
+ * you want to be able to access later, like deserializing an object. */
 db_match *filter(const db_conn *conn, const char prefix[static MAX_KEY_SIZE], const void *extrainput,
 		int (*filter)(const unsigned char *data, const size_t dsize,  const void *extrainput, void **extradata));
