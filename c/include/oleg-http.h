@@ -42,6 +42,7 @@ typedef struct db_match {
 	const size_t dsize;
 	const void *extradata;
 	struct db_match *next;
+	struct db_match *prev;
 } db_match;
 
 /* Takes a list of key matches and returns a list of matched values.

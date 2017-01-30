@@ -462,14 +462,17 @@ static inline db_match *_parse_bulk_response(unsigned char *data, const size_t d
 			.data = data_buf,
 			.dsize = record_size,
 			.extradata = NULL,
-			.next = NULL
+			.next = NULL,
+			.prev = NULL
 		};
 		memcpy(actual, &_tmp, sizeof(db_match));
 
 		/* This is dumb but I'm on the train right now and I don't care. */
 done:
-		if (last)
+		if (last) {
 			last->next = actual;
+			actual->prev = last;
+		}
 		if (!matches)
 			matches = actual;
 		last = actual;
@@ -532,7 +535,6 @@ db_match *fetch_bulk_from_db(const db_conn *conn, struct db_key_match *keys, int
 	if (total_size != rc) {
 		goto error;
 	}
-
 
 	/* Now we get back our weird Oleg-only format of keys. Hopefully
 	 * not chunked.
