@@ -60,6 +60,7 @@ int connect_to_host_with_port(const char *host, const char *port) {
 
 	request_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (request_fd < 0) {
+		printf("Could not create socket.");
 		goto error;
 	}
 
@@ -68,6 +69,7 @@ int connect_to_host_with_port(const char *host, const char *port) {
 
 	int rc = connect(request_fd, res->ai_addr, res->ai_addrlen);
 	if (rc == -1) {
+		printf("Could not connect to host.");
 		goto error;
 	}
 
