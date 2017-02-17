@@ -293,6 +293,7 @@ error:
 }
 
 int store_data_in_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], const unsigned char *val, const size_t vlen) {
+	int retcode = 1;
 	unsigned char *_data = NULL;
 
 	const size_t vlen_len = UINT_LEN(vlen);
@@ -303,12 +304,15 @@ int store_data_in_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], c
 
 	int sock = 0;
 	sock = connect_to_host_with_port(conn->host, conn->port);
-	if (sock == 0)
+	if (sock == 0) {
+		retcode = -1;
 		goto error;
+	}
 
 	sprintf(new_db_post, DB_POST, conn->db_name, key, conn->host, conn->port, vlen, val);
 	unsigned int rc = send(sock, new_db_post, strlen(new_db_post), 0);
 	if (strlen(new_db_post) != rc) {
+		retcode = -2;
 		goto error;
 	}
 
@@ -316,6 +320,7 @@ int store_data_in_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], c
 	size_t out;
 	_data = receive_http(sock, &out);
 	if (!_data) {
+		retcode = -3;
 		goto error;
 	}
 
@@ -326,7 +331,7 @@ int store_data_in_db(const db_conn *conn, const char key[static MAX_KEY_SIZE], c
 error:
 	free(_data);
 	close(sock);
-	return 0;
+	return retcode;
 }
 
 db_match *filter(const db_conn *conn, const char prefix[static MAX_KEY_SIZE], const void *extrainput,
