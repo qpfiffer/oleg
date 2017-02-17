@@ -69,7 +69,7 @@ int connect_to_host_with_port(const char *host, const char *port) {
 
 	int rc = connect(request_fd, res->ai_addr, res->ai_addrlen);
 	if (rc == -1) {
-		printf("Could not connect to host.");
+		perror("Could not connect to host.\n");
 		goto error;
 	}
 
